@@ -198,7 +198,7 @@ python3 main.py
 | `USE_GLOBAL_MODE` | `boolean` | `true` | **筛选模式**。<br>`true` = 全局优选模式（从所有节点中选出最优的 `GLOBAL_TOP_N` 个）。<br>`false` = 分国家优选模式（每个国家选出最优的 `PER_COUNTRY_TOP_N` 个）。 |
 | `GLOBAL_TOP_N` | `int` | `16` | 全局模式下最终保留的节点数量（仅在 `USE_GLOBAL_MODE=true` 时生效）。 |
 | `PER_COUNTRY_TOP_N` | `int` | `1` | 分国家模式下每个国家保留的节点数量（仅在 `USE_GLOBAL_MODE=false` 时生效）。 |
-| `BANDWIDTH_CANDIDATES` | `int` | `80` | **候选池大小**：从 TCP 测试通过者中选取前 N 个节点进入后续的可用性检测和带宽测速。增大该值可让更多节点参与最终竞争，但会延长总运行时间。 |
+| `BANDWIDTH_CANDIDATES` | `int` | `32` | **候选池大小**：从 TCP 测试通过者中选取前 N 个节点进入后续的可用性检测和带宽测速。增大该值可让更多节点参与最终竞争，但会延长总运行时间。 |
 
 ### TCP 连接测试参数
 
