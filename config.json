@@ -55,6 +55,12 @@
     "OUTPUT_FILE": "ip.txt",
     "_comment_OUTPUT_FILE": "最终结果保存的文件名",
 
+    "FILTER_COUNTRIES_ENABLED": false,
+    "_comment_FILTER_COUNTRIES_ENABLED": "是否启用国家过滤（仅保留指定国家的节点）",
+
+    "ALLOWED_COUNTRIES": ["US", "HK"],
+    "_comment_ALLOWED_COUNTRIES": "允许的国家代码列表（如 US, HK, JP），仅在 FILTER_COUNTRIES_ENABLED=true 时生效",
+
     "ENABLE_WXPUSHER": true,
     "_comment_ENABLE_WXPUSHER": "是否启用 WxPusher 微信通知",
 

@@ -57,6 +57,8 @@ def load_config():
         "AVAILABILITY_CHECK_API": "https://check-proxyip-api.cmliussss.net/check",
         "BANDWIDTH_URL_TEMPLATE": "https://speed.cloudflare.com/__down?bytes={bytes}",
         "OUTPUT_FILE": "ip.txt",
+        "FILTER_COUNTRIES_ENABLED": False,
+        "ALLOWED_COUNTRIES": [],
         "ENABLE_WXPUSHER": True,
         "WXPUSHER_APP_TOKEN": "",
         "WXPUSHER_UIDS": [],
@@ -93,6 +95,8 @@ JSON_URL = cfg["JSON_URL"]
 AVAILABILITY_CHECK_API = cfg["AVAILABILITY_CHECK_API"]
 BANDWIDTH_URL_TEMPLATE = cfg["BANDWIDTH_URL_TEMPLATE"]
 OUTPUT_FILE = cfg["OUTPUT_FILE"]
+FILTER_COUNTRIES_ENABLED = cfg["FILTER_COUNTRIES_ENABLED"]
+ALLOWED_COUNTRIES = cfg["ALLOWED_COUNTRIES"]
 ENABLE_WXPUSHER = cfg["ENABLE_WXPUSHER"]
 WXPUSHER_APP_TOKEN = cfg["WXPUSHER_APP_TOKEN"]
 WXPUSHER_UIDS = cfg["WXPUSHER_UIDS"]
@@ -376,6 +380,8 @@ def main():
     print(f"最低成功率要求：{MIN_SUCCESS_RATE*100:.0f}%")
     print(f"IP 可用性二次筛选：{'启用' if TEST_AVAILABILITY else '禁用'}（仅对候选节点）")
     print(f"带宽测速候选数：{BANDWIDTH_CANDIDATES}，测速文件大小：{BANDWIDTH_SIZE_MB} MB，超时：{BANDWIDTH_TIMEOUT}s")
+    if FILTER_COUNTRIES_ENABLED:
+        print(f"国家过滤：启用，允许国家：{', '.join(ALLOWED_COUNTRIES)}")
 
     # 1. 获取所有节点
     nodes = fetch_nodes()
@@ -405,6 +411,18 @@ def main():
 
     # 3. 排序：优先按成功率降序，相同成功率再按延迟升序
     results.sort(key=lambda x: (-x[3], x[1]))
+
+    # ===== 国家过滤 =====
+    if FILTER_COUNTRIES_ENABLED and ALLOWED_COUNTRIES:
+        before = len(results)
+        allowed_set = {c.upper() for c in ALLOWED_COUNTRIES}
+        results = [r for r in results if r[2].upper() in allowed_set]
+        after = len(results)
+        print(f"\n国家过滤：{before} -> {after} 个节点（允许国家：{', '.join(allowed_set)}）")
+        if not results:
+            print("⚠️ 过滤后无任何节点，退出程序。")
+            sys.exit(0)
+    # ===== 过滤结束 =====
 
     # 4. 选出候选节点
     if USE_GLOBAL_MODE:
