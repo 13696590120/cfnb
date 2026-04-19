@@ -161,6 +161,8 @@ python main.py
 * **GitHub 缓存**：GitHub Raw 链接有一定的 CDN 缓存时间（通常为 5 分钟左右）。如果刚运行完脚本发现链接内容没变，请稍等片刻。
 * **网络环境**：建议在你的主运行环境（如家庭软路由或主力 PC）运行此脚本，因为不同网络环境下筛选出的最优 IP 可能不同。
 
+-----
+
 ## ❓ 常见问题
 
 1.  **提示 `ModuleNotFoundError`**：请执行 `pip install requests`。
