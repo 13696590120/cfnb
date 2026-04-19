@@ -45,6 +45,7 @@ def load_config():
         "TCP_PROBES": 7,
         "MIN_SUCCESS_RATE": 1.0,
         "TEST_AVAILABILITY": True,
+        "FILTER_IPV6_AVAILABILITY": True,
         "BANDWIDTH_CANDIDATES": 80,
         "GLOBAL_TOP_N": 16,
         "PER_COUNTRY_TOP_N": 1,
@@ -93,6 +94,7 @@ USE_GLOBAL_MODE = cfg["USE_GLOBAL_MODE"]
 TCP_PROBES = cfg["TCP_PROBES"]
 MIN_SUCCESS_RATE = cfg["MIN_SUCCESS_RATE"]
 TEST_AVAILABILITY = cfg["TEST_AVAILABILITY"]
+FILTER_IPV6_AVAILABILITY = cfg["FILTER_IPV6_AVAILABILITY"]
 BANDWIDTH_CANDIDATES = cfg["BANDWIDTH_CANDIDATES"]
 GLOBAL_TOP_N = cfg["GLOBAL_TOP_N"]
 PER_COUNTRY_TOP_N = cfg["PER_COUNTRY_TOP_N"]
@@ -231,14 +233,13 @@ def check_availability(node_str):
         )
         if resp.status_code == 200:
             data = resp.json()
-            # --- 关键修改：增加对返回 IP 的 IPv6 检查 ---
             if data.get("success") is True:
-                returned_ip = data.get("ip", "")
-                # 如果返回的 IP 包含 ":"，则判定为 IPv6 地址，视为不可用
-                if ":" in returned_ip:
-                    return (node_str, False)
+                # 根据配置决定是否过滤返回 IPv6 客户端 IP 的节点
+                if FILTER_IPV6_AVAILABILITY:
+                    returned_ip = data.get("ip", "")
+                    if ":" in returned_ip:   # 简单判断 IPv6（包含冒号）
+                        return (node_str, False)
                 return (node_str, True)
-            # --- 修改结束 ---
     except Exception:
         pass
     return (node_str, False)
@@ -359,9 +360,8 @@ def batch_update_cloudflare_dns(ip_list):
         send_wxpusher_notification(content=msg, summary="DNS 更新跳过")
         return
 
-    # ========== 🔧 关键修复：对 IP 列表进行去重 ==========
+    # 对 IP 列表进行去重
     ip_list = list(dict.fromkeys(ip_list))
-    # ===================================================
 
     print(f"\n准备将以下 {len(ip_list)} 个 IP 批量更新到 Cloudflare DNS: {ip_list}")
 
@@ -505,6 +505,7 @@ def main():
     print(f"当前模式：{mode_str}，每个节点测试 {TCP_PROBES} 次 TCP 连接")
     print(f"最低成功率要求：{MIN_SUCCESS_RATE*100:.0f}%")
     print(f"IP 可用性二次筛选：{'启用' if TEST_AVAILABILITY else '禁用'}（仅对候选节点）")
+    print(f"IPv6 客户端 IP 过滤：{'启用' if FILTER_IPV6_AVAILABILITY else '禁用'}")
     print(f"带宽测速候选数：{BANDWIDTH_CANDIDATES}，测速文件大小：{BANDWIDTH_SIZE_MB} MB，超时：{BANDWIDTH_TIMEOUT}s")
     if FILTER_COUNTRIES_ENABLED:
         print(f"国家过滤：启用，允许国家：{', '.join(ALLOWED_COUNTRIES)}")
@@ -515,13 +516,12 @@ def main():
         print("没有获取到任何有效节点，退出。")
         sys.exit(1)
 
-    # ========== 优化：在 TCP 测试前进行国家过滤，大幅减少测试量 ==========
+    # 优化：在 TCP 测试前进行国家过滤，大幅减少测试量
     if FILTER_COUNTRIES_ENABLED and ALLOWED_COUNTRIES:
         before = len(nodes)
         allowed_set = {c.upper() for c in ALLOWED_COUNTRIES}
         filtered_nodes = []
         for node in nodes:
-            # 解析国家代码，格式 "IP:PORT#COUNTRY"
             parts = node.split('#')
             if len(parts) == 2 and parts[1].upper() in allowed_set:
                 filtered_nodes.append(node)
