@@ -28,7 +28,7 @@
     "MAX_WORKERS": 150,
     "_comment_MAX_WORKERS": "TCP 并发测试的最大线程数",
 
-    "AVAILABILITY_WORKERS": 50,
+    "AVAILABILITY_WORKERS": 20,
     "_comment_AVAILABILITY_WORKERS": "可用性检测的并发线程数",
 
     "BANDWIDTH_WORKERS": 6,
