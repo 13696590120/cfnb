@@ -1,3 +1,5 @@
+---
+
 # Cloudflare IP 优选工具
 
 [![GitHub stars](https://img.shields.io/github/stars/xinyitang3/cfnb?style=social)](https://github.com/xinyitang3/cfnb/stargazers)
@@ -328,3 +330,5 @@ python3 main.py
 ---
 
 **许可证**：本项目采用 [MIT License](https://opensource.org/licenses/MIT) 开源。
+
+---
