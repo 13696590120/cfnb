@@ -50,7 +50,7 @@ def load_config():
         "GLOBAL_TOP_N": 16,
         "PER_COUNTRY_TOP_N": 1,
         "MAX_WORKERS": 150,
-        "AVAILABILITY_WORKERS": 50,
+        "AVAILABILITY_WORKERS": 20,
         "BANDWIDTH_WORKERS": 6,
         "TIMEOUT": 2.5,
         "AVAILABILITY_TIMEOUT": 8,
