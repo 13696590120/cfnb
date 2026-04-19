@@ -114,6 +114,53 @@ python main.py
 
 -----
 
+## 📊 结果输出说明
+
+程序运行完成后，会在本地生成 `ip.txt` 并在同步后更新至 GitHub 链接：
+`https://raw.githubusercontent.com/xinyitang3/rules/refs/heads/main/ip.txt`
+
+### 文件格式
+`ip.txt` 采用标准格式，每一行代表一个最优节点，具体格式为：
+`IP地址:端口#国家代码-测速带宽(Mbps)`
+
+> **示例：**
+> `104.16.x.x:443#US-15.42`
+> `162.159.x.x:443#HK-12.10`
+
+-----
+
+## 🚀 对接 EdgeTunnel 指南
+
+**EdgeTunnel** (EDTunnel) 是基于 Cloudflare Workers 的隧道工具。使用本项目筛选出的 `ip.txt` 可以显著提升连接速度和稳定性。
+
+### 方法一：直接作为“优选端点”使用 (推荐)
+如果你使用的是支持“外部节点导入”或“自动更新优选 IP”的客户端（如 v2rayN 插件版本或相关手机 App）：
+
+1.  复制你的 GitHub Raw 链接：
+    `https://raw.githubusercontent.com/xinyitang3/rules/refs/heads/main/ip.txt`
+2.  在客户端的 **“优选 IP 列表”** 或 **“Endpoint 地址”** 处填入此 URL。
+3.  设置 **自动更新频率**（建议 15-60 分钟），确保节点始终保持最优。
+
+### 方法二：手动替换 EdgeTunnel 节点配置
+如果你正在手动配置 `vless` 或 `trojan` 节点信息：
+
+1.  打开 `ip.txt`，从列表中选择排在第一位（带宽最高）的 **IP 地址** 和 **端口**。
+2.  在你的 EdgeTunnel 客户端配置中，找到 **`地址 (Address)`** 或 **`伪装域名 (SNI)`** 栏目：
+    * **地址 (Address)**：填入 `ip.txt` 中的 IP。
+    * **端口 (Port)**：填入 `ip.txt` 中的对应端口（通常为 443）。
+    * **伪装域名 (SNI) / Host**：填入你部署 EdgeTunnel 时使用的 Worker 域名（例如 `your-worker.workers.dev`）。
+
+### 💡 为什么这样对接更有效？
+* **低延迟**：`main.py` 已经通过 TCP 握手筛选出了延迟最低的节点。
+* **高带宽**：结果经过真实 `curl` 下载测试，排在前面的节点具有更强的并发吞吐能力。
+* **高可用**：通过 `AVAILABILITY_CHECK_API` 过滤了那些能 Ping 通但无法正常通过代理请求的无效 IP。
+
+-----
+
+### 注意事项
+* **GitHub 缓存**：GitHub Raw 链接有一定的 CDN 缓存时间（通常为 5 分钟左右）。如果刚运行完脚本发现链接内容没变，请稍等片刻。
+* **网络环境**：建议在你的主运行环境（如家庭软路由或主力 PC）运行此脚本，因为不同网络环境下筛选出的最优 IP 可能不同。
+
 ## ❓ 常见问题
 
 1.  **提示 `ModuleNotFoundError`**：请执行 `pip install requests`。
