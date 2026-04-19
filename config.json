@@ -46,7 +46,7 @@
     "JSON_URL": "https://zip.cm.edu.kg/all.txt",
     "_comment_JSON_URL": "Cloudflare IP 节点数据源（txt格式，每行 IP:端口#国家）",
 
-    "AVAILABILITY_CHECK_API": "https://cf.090227.xyz/check",
+    "AVAILABILITY_CHECK_API": "https://check-proxyip-api.cmliussss.net/check",
     "_comment_AVAILABILITY_CHECK_API": "IP 可用性检测 API 地址",
 
     "BANDWIDTH_URL_TEMPLATE": "https://speed.cloudflare.com/__down?bytes={bytes}",
