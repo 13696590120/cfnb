@@ -402,4 +402,3 @@ python3 main.py
 **许可证**：本项目采用 [MIT License](https://opensource.org/licenses/MIT) 开源。
 
 ---
-以上是完整的 `README.md` 内容，已同步更新所有关于 `FILTER_IPV6_AVAILABILITY` 和 DNS 更新机制的描述。可直接替换原文件。
