@@ -78,7 +78,7 @@ cd 仓库名
 | `WXPUSHER_APP_TOKEN` | WxPusher 的应用 Token（用于通知） | `AT_xxx...` |
 | `WXPUSHER_UIDS` | 接收通知的微信 UID 列表 | `["UID_xxx"]` |
 
-### 4\. 配置 GitHub 自动推送（可选）
+### 4\. 配置 GitHub 自动推送
 
 若需自动更新仓库中的 `ip.txt`，请编辑 `git_sync.ps1`：
 
