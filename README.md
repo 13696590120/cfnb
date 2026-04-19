@@ -91,7 +91,7 @@
    若不需要推送到 GitHub，可在 `config.json` 中将 `GITHUB_SYNC_MAX_RETRIES` 设为 `0` 并手动注释 `main.py` 末尾的 `sync_to_github()` 调用（通常无需修改）。
 
 4. **配置 Cloudflare DNS 自动更新（可选）**  
-   如需将优选 IP 自动更新到 Cloudflare DNS，请参考下方 [Cloudflare DNS 批量更新说明](#cloudflare-dns-批量更新说明) 获取 API 令牌及 Zone ID，并填写 `config.json` 中 `CF_` 开头的相关配置项。
+   如需将优选 IP 自动更新到 Cloudflare DNS，请参考下方 [Cloudflare DNS 批量更新参数](#cloudflare-dns-批量更新参数) 获取 API 令牌及 Zone ID，并填写 `config.json` 中 `CF_` 开头的相关配置项。
 
 ---
 
