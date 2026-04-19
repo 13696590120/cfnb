@@ -13,7 +13,7 @@
     "TEST_AVAILABILITY": true,
     "_comment_TEST_AVAILABILITY": "是否对候选节点进行可用性二次筛选（API检测）",
 
-    "BANDWIDTH_CANDIDATES": 32,
+    "BANDWIDTH_CANDIDATES": 80,
     "_comment_BANDWIDTH_CANDIDATES": "进入带宽测速的候选节点数（从TCP通过者中选取前N个）",
 
     "GLOBAL_TOP_N": 16,
