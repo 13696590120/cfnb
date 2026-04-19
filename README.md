@@ -2,7 +2,7 @@
 
 # Cloudflare IP 优选工具
 
-[![GitHub stars](https://img.shields.io/github/stars/xinyitang3/cfnb?style=social)](https://github.com/xingyitang3/cfnb/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/xinyitang3/cfnb?style=social)](https://github.com/xinyitang3/cfnb/stargazers)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue)]()
 [![License](https://img.shields.io/badge/License-MIT-green)]()
 
