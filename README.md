@@ -54,7 +54,7 @@ cd 仓库名
     pip install requests
     ```
 
-### 3\. 修改配置文件
+### 3\. 配置微信实时通知
 
 使用文本编辑器（如 Notepad++）修改`config.json`关键字段：
 
