@@ -114,7 +114,7 @@ python main.py
 
 -----
 
-## 🚀 对接 EdgeTunnel 指南
+## 🚀 对接 EdgeTunnel (2.0+) 指南
 
 **EdgeTunnel** (EDTunnel) 是基于 Cloudflare Workers 的隧道工具。使用本项目筛选出的 `ip.txt` 可以显著提升连接速度和稳定性。
 
