@@ -231,8 +231,14 @@ def check_availability(node_str):
         )
         if resp.status_code == 200:
             data = resp.json()
+            # --- 关键修改：增加对返回 IP 的 IPv6 检查 ---
             if data.get("success") is True:
+                returned_ip = data.get("ip", "")
+                # 如果返回的 IP 包含 ":"，则判定为 IPv6 地址，视为不可用
+                if ":" in returned_ip:
+                    return (node_str, False)
                 return (node_str, True)
+            # --- 修改结束 ---
     except Exception:
         pass
     return (node_str, False)
