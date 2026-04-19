@@ -80,11 +80,12 @@
    - **Windows**：编辑 `git_sync.ps1`
    - **Linux**：编辑 `git_sync.sh`
    
-   修改以下三项为你的真实信息：
+   修改以下四项为你的真实信息：
    ```text
    github_token="你的 GitHub Personal Access Token"
    github_username="你的 GitHub 用户名"
    repo_name="仓库名"
+   branch="分支"
    ```
 
 ---
