@@ -1,3 +1,5 @@
+---
+
 # Cloudflare IP 优选工具
 
 这是一个全自动的 **Cloudflare CDN 节点优选工具**。它通过 **TCP 延迟筛选** + **IP 可用性二次检测** + **真实带宽测速** 三重机制，从海量公开节点中筛选出当前网络环境下速度最快、可用性最高的 Cloudflare IP，并将结果自动推送到 GitHub 仓库，同时支持微信实时通知。
@@ -322,3 +324,5 @@ python3 main.py
 ---
 
 **许可证**：本项目采用 [MIT License](https://opensource.org/licenses/MIT) 开源。
+
+---
