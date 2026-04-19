@@ -16,7 +16,7 @@
     "FILTER_IPV6_AVAILABILITY": false,
     "_comment_FILTER_IPV6_AVAILABILITY": "是否在可用性检测时过滤返回IPv6客户端IP的节点（true=过滤掉，false=保留）",
 
-    "BANDWIDTH_CANDIDATES": 80,
+    "BANDWIDTH_CANDIDATES": 32,
     "_comment_BANDWIDTH_CANDIDATES": "进入带宽测速的候选节点数（从TCP通过者中选取前N个）",
 
     "GLOBAL_TOP_N": 16,
