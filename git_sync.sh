@@ -5,7 +5,7 @@
 github_token="your_github_personal_access_token_here"
 github_username="your_github_username"
 repo_name="your_repo_name"
-branch="main"
+branch="your_branch"
 
 # 切换到脚本所在目录
 cd "$(dirname "$0")" || exit 1
