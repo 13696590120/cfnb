@@ -1,14 +1,20 @@
------
+---
 
 # Cloudflare IP 优选工具
 
 这是一个全自动的 **Cloudflare CDN 节点优选工具**。它通过 **TCP 延迟筛选** + **IP 可用性二次检测** + **真实带宽测速** 三重机制，筛选出当前环境下速度最快的节点，并将结果自动推送到 GitHub 仓库，同时支持微信实时通知。
 
-> [\!CAUTION]
+> [!CAUTION]
 > **重要提示：** 本工具 **仅支持 Windows 操作系统**。
 > 自动推送功能依赖 PowerShell 脚本 `git_sync.ps1`，Linux / macOS 无法直接使用（除非自行实现等效 Shell 脚本）。
 
------
+---
+
+## 🛠 工作流程
+程序启动后将按以下顺序自动化执行：
+**抓取节点数据** → **TCP 延迟初筛** → **API 可用性复筛** → **真实带宽测速 (curl)** → **生成 `ip.txt`** → **同步至 GitHub** → **微信推送通知**
+
+---
 
 ## 📦 文件清单
 
@@ -18,121 +24,74 @@
 | `config.json` | **配置文件**：所有运行参数均在此修改 |
 | `git_sync.ps1` | **PowerShell 脚本**：用于将 `ip.txt` 强制推送到 GitHub |
 | `setup.ps1` | **一键安装环境脚本**：自动安装所需依赖、配置隐私保护及计划任务（需管理员权限） |
-| `ip.txt` | **输出结果**：程序运行后生成的优选节点列表（每次运行会覆盖） |
+| `ip.txt` | **输出结果**：程序运行后生成的优选节点列表 |
 
------
+---
 
-## 🖥️ 系统要求
+## 🚀 快速上手
 
-  * **操作系统**：Windows 10 / Windows Server 2016 或更高版本
-  * **必备软件**：
-      * **Python 3.7+**（安装时需勾选 *“Add Python to PATH”*）
-      * **Git**
-      * **curl**（需将 `curl.exe` 所在目录加入系统 PATH）
-  * **Python 依赖**：`requests` 库
+### 1. 环境准备
+* **操作系统**：Windows 10 (1803+) 或 Windows 11（系统自带 `curl`）。
+* **Python**：建议安装 Python 3.8 或更高版本。
 
------
+### 2. 一键部署（推荐）
+右键点击 `setup.ps1`，选择 **“使用 PowerShell 运行”**。脚本会自动：
+* 检查并安装 `requests` 库。
+* 自动生成 `.gitignore` 防止隐私泄露。
+* **创建 Windows 计划任务**：默认每 15 分钟后台自动运行一次，无需人工干预。
 
-## 🚀 部署步骤
+### 3. 配置参数
+编辑 `config.json`，根据注释修改参数。主要关注：
 
-### 1\. 获取项目文件
-
-通过 Git 克隆或直接下载 ZIP 压缩包并解压：
-
-```bash
-git clone https://github.com/你的用户名/仓库名.git
-cd 仓库名
-```
-
-### 2\. 安装运行环境
-
-  * **推荐方式（一键部署）**：
-    右键点击 **`setup.ps1`**，选择 **“使用 PowerShell 运行”**（请以管理员身份运行）。脚本会自动安装环境，生成 `.gitignore` 保护隐私，并自动创建 Windows 计划任务。
-  * **手动方式**：
-    若已安装 Python，请在项目目录下执行：
-    ```cmd
-    pip install requests
-    ```
-
-### 3\. 修改配置文件 `config.json`
-
-使用文本编辑器（如 Notepad++）修改关键字段，配置文件支持以下所有参数：
-
-| 参数名称 | 说明 | 默认值 |
+| 字段 | 说明 | 默认值 |
 | :--- | :--- | :--- |
-| `USE_GLOBAL_MODE` | `true`: 全局最优 N 个；`false`: 每个国家最优 N 个 | `true` |
-| `TCP_PROBES` | 每个节点测试 TCP 连接的次数 | `7` |
-| `MIN_SUCCESS_RATE` | TCP 最低成功率阈值（如 1.0 代表 100% 成功） | `1.0` |
-| `TEST_AVAILABILITY` | 是否进行 API 可用性二次筛选 | `true` |
-| `BANDWIDTH_CANDIDATES`| 进入带宽测速的候选节点数（从 TCP 通过者中选取） | `32` |
-| `GLOBAL_TOP_N` | 全局模式下最终保留的节点数量 | `16` |
-| `PER_COUNTRY_TOP_N` | 分国家模式下每个国家保留的节点数量 | `1` |
-| `MAX_WORKERS` | TCP 并发测试的最大线程数 | `150` |
-| `AVAILABILITY_WORKERS`| 可用性检测的并发线程数 | `50` |
-| `BANDWIDTH_WORKERS` | 带宽测速的并发线程数 | `6` |
-| `TIMEOUT` | 单次 TCP 连接超时时间（秒） | `2.5` |
-| `AVAILABILITY_TIMEOUT`| 可用性 API 请求超时时间（秒） | `8` |
-| `BANDWIDTH_TIMEOUT` | 单个节点带宽测速超时时间（秒） | `5` |
-| `BANDWIDTH_SIZE_MB` | 带宽测速下载文件大小 (MB) | `1` |
+| `USE_GLOBAL_MODE` | `true`: 全局最优 IP；`false`: 每个国家最优 IP | `true` |
+| `BANDWIDTH_CANDIDATES` | 参与带宽测速的候选 IP 数量 | `32` |
+| `GLOBAL_TOP_N` | 最终保留在 `ip.txt` 中的节点数 | `16` |
 | `JSON_URL` | Cloudflare IP 节点数据源地址 | `https://zip.cm.edu.kg/all.txt` |
-| `WXPUSHER_APP_TOKEN` | WxPusher 的应用 Token（用于通知） | `AT_xxx...` |
+| `WXPUSHER_APP_TOKEN` | [WxPusher 应用 Token](https://wxpusher.zjiecode.com/admin/) | `AT_xxx...` |
 | `WXPUSHER_UIDS` | 接收通知的微信 UID 列表 | `["UID_xxx"]` |
 
-### 4\. 配置 GitHub 自动推送（可选）
+### 4. 配置 GitHub 自动推送（可选）
 
-若需自动更新仓库中的 `ip.txt`，请编辑 `git_sync.ps1`：
+若需自动更新仓库中的 `ip.txt`，请编辑 `git_sync.ps1`。
+> [!TIP]
+> **Token 申请**：前往 [GitHub Tokens (Classic)](https://github.com/settings/tokens) 创建，需勾选 `repo` 权限。
 
 ```powershell
-$github_token = "ghp_xxxxxxxxxxxxxxxxxxxx"   # GitHub Personal Access Token
-$github_username = "你的GitHub用户名"
+$github_token = "ghp_xxxxxxxx"   # 填入你的 Token
+$github_username = "你的 GitHub 用户名"
 $repo_name = "仓库名"
 ```
 
-> [\!WARNING]
-> **安全提醒**：切勿将包含真实 Token 的脚本提交到公开仓库！建议将其加入 `.gitignore`。
-> 同时确保项目目录已与远程仓库关联：`git remote add origin https://github.com/用户/仓库.git`
+> [!WARNING]
+> **安全提醒**：切勿将包含真实 Token 的脚本提交到公开仓库！
+> **初始化提醒**：确保你的项目目录已关联远程库：`git remote add origin https://github.com/用户/仓库.git`
 
-### 5\. 运行程序
-
-在项目文件夹地址栏输入 `cmd` 并回车，执行：
-
+### 5. 运行程序
+若不使用计划任务，也可在项目文件夹地址栏输入 `cmd` 并回车，手动执行：
 ```cmd
 python main.py
 ```
 
-程序将自动执行：**抓取节点 → TCP 测试 → 可用性二次检测 → 带宽测速 → GitHub 推送 → 微信通知**。
-
------
+---
 
 ## 🕒 设置定时自动运行
 
-  * **Windows 任务计划程序 (手动设置)**：
-    **步骤 1.** 打开“任务计划程序” → “创建基本任务”。
-    **步骤 2.** 触发器：设置为每天凌晨或其他时间。
-    **步骤 3.** 操作：启动程序。
+* **使用 `setup.ps1` 自动设置**：脚本会自动创建名为 `Cloudflare IP 优选` 的任务，每 15 分钟运行一次。
+* **手动调整频率**：
+    1.  按下 `Win + R`，输入 `taskschd.msc` 并回车。
+    2.  在“任务计划程序库”中找到 `Cloudflare IP 优选`。
+    3.  右键“属性” -> “触发器” -> “编辑”，即可修改重复间隔（如改为每 1 小时运行一次）。
 
-      * 程序或脚本：`python`
-      * 添加参数：`main.py`
-      * 起始于：`项目文件夹的绝对路径`
+---
 
-  * **自动化方案**：若使用了 `setup.ps1` 部署，系统已自动创建名为 **“Cloudflare IP 优选”** 的任务，默认每 15 分钟运行一次。
+## ❓ 常见问题 (FAQ)
 
------
+**Q: 为什么带宽测速结果全是 0.00 Mbps？**
+A: 请确保你的系统可以调用 `curl` 命令。在 CMD 输入 `curl --version` 检查。如果是精简版系统，请自行安装 curl 并添加环境变量。
 
-## ❓ 常见问题
+**Q: 如何停止自动运行的任务？**
+A: 在“任务计划程序”中找到该任务，右键选择“禁用”或“删除”即可。
 
-1.  **提示 `ModuleNotFoundError`**：请执行 `pip install requests`。
-2.  **带宽测速跳过**：确保系统已安装 `curl` 并在环境变量中。
-3.  **可用性检测全部失败**：若 API 接口异常，程序会自动跳过此步骤并回退到 TCP 筛选结果，同时发送微信提醒。
-4.  **隐私保护**：新版脚本会自动生成 `.gitignore` 忽略 `config.json` 和 `git_sync.ps1`，防止私密信息外泄。
-
------
-
-## 🙏 致谢
-
-  * 节点数据源 & 检测 API：[cmliussss](https://www.google.com/search?q=https://github.com/cmliussss)
-  * 微信通知服务：[WxPusher](https://wxpusher.zjiecode.com/)
-
------
-
-**许可证**：本项目采用 [MIT License](https://opensource.org/licenses/MIT) 开源。
+---
