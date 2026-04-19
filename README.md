@@ -213,7 +213,7 @@ python3 main.py
 | 参数 | 类型 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
 | `TEST_AVAILABILITY` | `boolean` | `true` | 是否对候选节点进行 **可用性二次筛选**（调用专用 API 检测节点能否正常代理请求）。推荐保持开启。 |
-| `AVAILABILITY_CHECK_API` | `string` | `"https://check-proxyip-api.cmliussss.net/check"` | 可用性检测 API 地址。一般无需修改，除非服务地址变更。 |
+| `AVAILABILITY_CHECK_API` | `string` | `"https://cf.090227.xyz/check"` | 可用性检测 API 地址。可根据需要替换为其他兼容接口。 |
 | `AVAILABILITY_TIMEOUT` | `float` | `8.0` | 单次 API 请求的超时时间（秒）。 |
 
 ### 带宽测速参数
@@ -389,7 +389,8 @@ python3 main.py
 
 ## 🙏 致谢
 
-- 节点数据源 & 检测 API：[cmliussss](https://github.com/cmliussss)
+- 节点数据源：[cmliussss](https://github.com/cmliussss)
+- 可用性检测 API：[cf.090227.xyz](https://cf.090227.xyz) 
 - 微信通知服务：[WxPusher](https://wxpusher.zjiecode.com/)
 
 ---
