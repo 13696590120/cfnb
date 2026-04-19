@@ -169,24 +169,78 @@ python3 main.py
 
 ---
 
-## ⚙️ 配置说明
+## ⚙️ 配置说明（完整参数详解）
 
-所有运行参数均集中在 `config.json` 文件中，文件内已包含详细注释。主要配置项如下：
+所有运行参数均集中在 `config.json` 文件中。以下为 **每一个配置项** 的详细说明，您可根据自身网络环境和需求进行调整。
 
-| 参数 | 说明 |
-| :--- | :--- |
-| `USE_GLOBAL_MODE` | `true` = 全局最优 N 个；`false` = 每个国家最优 N 个 |
-| `TCP_PROBES` | 每个节点 TCP 连接测试次数 |
-| `MIN_SUCCESS_RATE` | TCP 最低成功率阈值（0.0~1.0） |
-| `BANDWIDTH_CANDIDATES` | 进入带宽测速的候选节点数 |
-| `GLOBAL_TOP_N` / `PER_COUNTRY_TOP_N` | 最终保留的节点数量 |
-| `FILTER_COUNTRIES_ENABLED` | 是否启用国家过滤 |
-| `ALLOWED_COUNTRIES` | 允许的国家代码列表（如 `["HK","US"]`） |
-| `ENABLE_WXPUSHER` | 是否启用微信通知 |
-| `WXPUSHER_APP_TOKEN` / `WXPUSHER_UIDS` | WxPusher 认证信息 |
-| `OUTPUT_FILE` | 结果保存文件名（默认 `ip.txt`） |
+### 筛选模式与数量控制
 
-> 💡 其余并发数、超时时间、API 地址等高级参数可根据网络环境微调，一般保持默认即可。
+| 参数 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `USE_GLOBAL_MODE` | `boolean` | `true` | **筛选模式**。<br>`true` = 全局优选模式（从所有节点中选出最优的 `GLOBAL_TOP_N` 个）。<br>`false` = 分国家优选模式（每个国家选出最优的 `PER_COUNTRY_TOP_N` 个）。 |
+| `GLOBAL_TOP_N` | `int` | `16` | 全局模式下最终保留的节点数量（仅在 `USE_GLOBAL_MODE=true` 时生效）。 |
+| `PER_COUNTRY_TOP_N` | `int` | `1` | 分国家模式下每个国家保留的节点数量（仅在 `USE_GLOBAL_MODE=false` 时生效）。 |
+| `BANDWIDTH_CANDIDATES` | `int` | `32` | **候选池大小**：从 TCP 测试通过者中选取前 N 个节点进入后续的可用性检测和带宽测速。增大该值可让更多节点参与最终竞争，但会延长总运行时间。 |
+
+### TCP 连接测试参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `TCP_PROBES` | `int` | `7` | 每个节点测试 TCP 连接的次数。增加次数可提高延迟数据的准确性，但会增加总测试时间。 |
+| `MIN_SUCCESS_RATE` | `float` | `1.0` | **最低成功率阈值**（0.0 ~ 1.0）。节点在 `TCP_PROBES` 次测试中的成功比例必须 ≥ 此值才能进入下一轮。`1.0` 表示要求全部连接成功。若网络波动大，可适当降低（如 `0.7`）。 |
+| `TIMEOUT` | `float` | `2.5` | 单次 TCP 连接超时时间（秒）。超时未连上的即判定失败。网络延迟较高时可酌情增加。 |
+
+### 可用性检测参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `TEST_AVAILABILITY` | `boolean` | `true` | 是否对候选节点进行 **可用性二次筛选**（调用专用 API 检测节点能否正常代理请求）。推荐保持开启。 |
+| `AVAILABILITY_CHECK_API` | `string` | `"https://check-proxyip-api.cmliussss.net/check"` | 可用性检测 API 地址。一般无需修改，除非服务地址变更。 |
+| `AVAILABILITY_TIMEOUT` | `float` | `8.0` | 单次 API 请求的超时时间（秒）。 |
+
+### 带宽测速参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `BANDWIDTH_SIZE_MB` | `int` | `1` | 测速下载文件大小（MB）。值越大测速越精准，但耗时越长。建议保持 1-5 MB。 |
+| `BANDWIDTH_TIMEOUT` | `float` | `5.0` | 单个节点的带宽测速超时时间（秒）。如果文件在规定时间内无法下载完成，则判定测速失败。 |
+| `BANDWIDTH_URL_TEMPLATE` | `string` | `"https://speed.cloudflare.com/__down?bytes={bytes}"` | 带宽测速 URL 模板，`{bytes}` 会被替换为 `BANDWIDTH_SIZE_MB * 1024 * 1024`。一般无需修改。 |
+
+### 并发控制参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `MAX_WORKERS` | `int` | `150` | TCP 并发测试的最大线程数。值越高测试越快，但会占用更多系统资源。若运行时出现大量超时错误，可适当降低。 |
+| `AVAILABILITY_WORKERS` | `int` | `50` | 可用性检测的并发线程数。 |
+| `BANDWIDTH_WORKERS` | `int` | `6` | 带宽测速的并发线程数。**注意**：测速非常消耗带宽，并发过高可能导致测速结果不准确或网络拥堵，建议不超过 10。 |
+
+### 节点数据源与输出
+
+| 参数 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `JSON_URL` | `string` | `"https://zip.cm.edu.kg/all.txt"` | Cloudflare IP 节点数据源 URL（TXT 格式，每行 `IP:端口#国家`）。可替换为其他兼容源。 |
+| `OUTPUT_FILE` | `string` | `"ip.txt"` | 最终优选节点保存的文件名。程序运行后会覆盖写入该文件。 |
+
+### 国家过滤参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `FILTER_COUNTRIES_ENABLED` | `boolean` | `false` | 是否启用国家过滤。若为 `true`，则只保留 `ALLOWED_COUNTRIES` 中列出的国家/地区的节点。 |
+| `ALLOWED_COUNTRIES` | `array` | `[]` | 允许的国家代码列表（如 `["HK","US","JP"]`），仅在 `FILTER_COUNTRIES_ENABLED=true` 时生效。国家代码应为两位大写字母。 |
+
+### 微信通知（WxPusher）参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `ENABLE_WXPUSHER` | `boolean` | `true` | 是否启用 WxPusher 微信通知。 |
+| `WXPUSHER_APP_TOKEN` | `string` | `""` | **【必填】** WxPusher 的 APP_TOKEN。请从 [WxPusher 管理后台](https://wxpusher.zjiecode.com/admin/) 获取。 |
+| `WXPUSHER_UIDS` | `array` | `[""]` | **【必填】** 接收通知的用户 UID 列表。请从 WxPusher 获取您的 UID 并填入。 |
+| `WXPUSHER_API_URL` | `string` | `"http://wxpusher.zjiecode.com/api/send/message"` | 消息发送 API 地址，一般无需修改。 |
+
+> 💡 **配置建议**：  
+> - 对于大多数用户，仅需修改 `ALLOWED_COUNTRIES`、`WXPUSHER_APP_TOKEN` 和 `WXPUSHER_UIDS` 即可满足需求。  
+> - 若网络环境较差，可适当增加 `TCP_PROBES` 和 `TIMEOUT`，并降低 `MIN_SUCCESS_RATE` 和 `MAX_WORKERS`。  
+> - 若希望更快获得结果，可减少 `BANDWIDTH_CANDIDATES` 或 `BANDWIDTH_SIZE_MB`。
 
 ---
 
@@ -269,3 +323,6 @@ python3 main.py
 ---
 
 **许可证**：本项目采用 [MIT License](https://opensource.org/licenses/MIT) 开源。
+```
+
+---
