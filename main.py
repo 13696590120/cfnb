@@ -70,7 +70,7 @@ def load_config():
         "CF_API_TOKEN": "",
         "CF_ZONE_ID": "",
         "CF_DNS_RECORD_NAME": "",
-        "CF_TTL": 1,
+        "CF_TTL": 60,
         "CF_PROXIED": False,
         "DNS_UPDATE_MAX_RETRIES": 5,
         "DNS_UPDATE_RETRY_DELAY": 10,
