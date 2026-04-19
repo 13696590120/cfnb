@@ -2,12 +2,6 @@
 
 # Cloudflare IP 优选工具
 
-[![GitHub stars](https://img.shields.io/github/stars/xinyitang3/cfnb?style=social)](https://github.com/你的用户名/仓库名/stargazers)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue)]()
-[![License](https://img.shields.io/badge/License-MIT-green)]()
-
-> ⭐ **如果觉得好用，点个 Star 支持一下～**  
-
 这是一个全自动的 **Cloudflare CDN 节点优选工具**。它通过 **TCP 延迟筛选** + **IP 可用性二次检测** + **真实带宽测速** 三重机制，从海量公开节点中筛选出当前网络环境下速度最快、可用性最高的 Cloudflare IP，并将结果自动推送到 GitHub 仓库，同时支持微信实时通知。
 
 > [!IMPORTANT]
@@ -330,5 +324,13 @@ python3 main.py
 ---
 
 **许可证**：本项目采用 [MIT License](https://opensource.org/licenses/MIT) 开源。
+
+---
+
+[![GitHub stars](https://img.shields.io/github/stars/xinyitang3/cfnb?style=social)](https://github.com/你的用户名/仓库名/stargazers)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue)]()
+[![License](https://img.shields.io/badge/License-MIT-green)]()
+
+> ⭐ **如果觉得好用，点个 Star 支持一下～**
 
 ---
