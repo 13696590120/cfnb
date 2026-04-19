@@ -231,6 +231,3 @@ python3 main.py
 ---
 
 **许可证**：本项目采用 [MIT License](https://opensource.org/licenses/MIT) 开源。
-```
-
-此 README 已完整涵盖 Windows 和 Linux 双平台的使用说明，用户可根据自身系统选择对应的部署方式。
