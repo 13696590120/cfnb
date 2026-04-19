@@ -217,11 +217,11 @@ def test_node(node_str):
 def check_availability(node_str):
     """
     检测单个节点是否可用（通过 check-proxyip-api）
-    返回 (node_str, is_ok)
+    返回 (node_str, is_ok, returned_ip)
     """
     m = re.match(r"^(\d+\.\d+\.\d+\.\d+):(\d+)#", node_str)
     if not m:
-        return (node_str, False)
+        return (node_str, False, "")
     ip, port = m.group(1), m.group(2)
     proxyip = f"{ip}:{port}"
 
@@ -234,27 +234,26 @@ def check_availability(node_str):
         if resp.status_code == 200:
             data = resp.json()
             if data.get("success") is True:
-                # 根据配置决定是否过滤返回 IPv6 客户端 IP 的节点
-                if FILTER_IPV6_AVAILABILITY:
-                    returned_ip = data.get("ip", "")
-                    if ":" in returned_ip:   # 简单判断 IPv6（包含冒号）
-                        return (node_str, False)
-                return (node_str, True)
+                returned_ip = data.get("ip", "")
+                return (node_str, True, returned_ip)
     except Exception:
         pass
-    return (node_str, False)
+    return (node_str, False, "")
 
 def availability_filter_candidates(candidates):
     """
     对候选节点进行可用性二次筛选
+    返回 (passed_nodes, ip_info)
+        - passed_nodes: 通过检测的节点列表
+        - ip_info: 字典，key=完整节点字符串，value=落地IP
     - 若通过率 = 0%（全部失败），发送微信告警，返回原候选列表（跳过过滤）
-    - 若通过率 > 0%，返回通过检测的节点列表
     """
     if not TEST_AVAILABILITY or not candidates:
-        return candidates
+        return candidates, {}
 
     print(f"\n对 {len(candidates)} 个候选节点进行可用性二次筛选...")
     passed = []
+    ip_info = {}
     completed = 0
     total = len(candidates)
     last_print = time.time()
@@ -263,9 +262,10 @@ def availability_filter_candidates(candidates):
         futures = {executor.submit(check_availability, node): node for node in candidates}
         for future in as_completed(futures):
             completed += 1
-            node_str, ok = future.result()
+            node_str, ok, returned_ip = future.result()
             if ok:
                 passed.append(node_str)
+                ip_info[node_str] = returned_ip
             now = time.time()
             if now - last_print >= 0.5 or completed == total:
                 print(f"\r[可用性检测] 进度：{completed}/{total} ({(completed/total)*100:.1f}%) 通过数量：{len(passed)}", end="", flush=True)
@@ -278,10 +278,10 @@ def availability_filter_candidates(candidates):
             content=f"IP 可用性检测 API 疑似失效，{total} 个候选节点全部未通过，已自动跳过过滤。",
             summary="可用性 API 异常"
         )
-        return candidates  # 返回原列表，不进行过滤
+        return candidates, {}   # 返回原列表，落地信息为空
     else:
         print(f"可用性检测完成，通过数量：{len(passed)} / {total}")
-        return passed
+        return passed, ip_info
 
 def measure_bandwidth_curl(node_str):
     """
@@ -345,25 +345,52 @@ def bandwidth_filter(candidates):
     results.sort(key=lambda x: x[1], reverse=True)
     return results
 
-def batch_update_cloudflare_dns(ip_list):
+def batch_update_cloudflare_dns(ip_list, ip_info=None, full_bw_results=None, target_count=16):
     """
-    将 ip.txt 中的所有 IP 批量更新为 Cloudflare 的同名 A 记录。
-    支持自动重试（次数与间隔可在 config.json 中配置）。
+    将优选 IP 批量更新为 Cloudflare DNS 的同名 A 记录。
+    - ip_list: 原 ip.txt 中的纯 IP 列表（用于降级场景）
+    - ip_info: 字典，node_str -> 落地IP（用于 IPv6 过滤）
+    - full_bw_results: 完整带宽测速结果，格式 [(node_str, speed), ...]，已按速度降序排列
+    - target_count: 期望更新的 IP 数量（默认 16）
     """
     if not cfg.get("CF_ENABLED", False):
         print("Cloudflare DNS 批量更新未启用。")
         return
 
-    if not ip_list:
-        msg = "ip.txt 中没有有效的 IP，DNS 更新跳过。"
-        print(msg)
-        send_wxpusher_notification(content=msg, summary="DNS 更新跳过")
-        return
+    # 优先使用完整测速结果 + 落地信息来构建更新列表
+    dns_ip_list = []
+    if full_bw_results and ip_info:
+        # 如果需要过滤 IPv6 落地，则按速度顺序挑选落地 IPv4 的节点
+        if cfg.get("FILTER_IPV6_AVAILABILITY", False):
+            for node_str, speed in full_bw_results:
+                returned_ip = ip_info.get(node_str, "")
+                if ":" not in returned_ip:   # 落地 IPv4
+                    pure_ip = node_str.split(':')[0]
+                    dns_ip_list.append(pure_ip)
+                if len(dns_ip_list) >= target_count:
+                    break
+            print(f"从 {len(full_bw_results)} 个测速节点中筛选出 {len(dns_ip_list)} 个落地 IPv4 节点用于 DNS 更新。")
+        else:
+            # 不过滤 IPv6，直接取前 target_count 个
+            for node_str, _ in full_bw_results[:target_count]:
+                pure_ip = node_str.split(':')[0]
+                dns_ip_list.append(pure_ip)
 
-    # 对 IP 列表进行去重
-    ip_list = list(dict.fromkeys(ip_list))
+    # 降级：若上述方法未产生任何 IP，则回退到原 ip_list
+    if not dns_ip_list:
+        if ip_list:
+            print("⚠️ 未能从完整测速结果构建 DNS 列表，降级使用 ip.txt 中的 IP。")
+            dns_ip_list = ip_list
+        else:
+            msg = "没有可用的 IP 用于 DNS 更新，跳过。"
+            print(msg)
+            send_wxpusher_notification(content=msg, summary="DNS 更新跳过")
+            return
 
-    print(f"\n准备将以下 {len(ip_list)} 个 IP 批量更新到 Cloudflare DNS: {ip_list}")
+    # 去重
+    dns_ip_list = list(dict.fromkeys(dns_ip_list))
+
+    print(f"\n准备将以下 {len(dns_ip_list)} 个 IP 批量更新到 Cloudflare DNS: {dns_ip_list}")
 
     headers = {
         "Authorization": f"Bearer {cfg['CF_API_TOKEN']}",
@@ -401,7 +428,7 @@ def batch_update_cloudflare_dns(ip_list):
                     "ttl": ttl,
                     "proxied": proxied
                 }
-                for ip in ip_list
+                for ip in dns_ip_list
             ]
 
             batch_url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/batch"
@@ -415,10 +442,9 @@ def batch_update_cloudflare_dns(ip_list):
                 raise Exception(f"批量更新失败: {error_detail}")
 
             # 成功
-            success_msg = f"✅ Cloudflare DNS 批量更新成功！已将 {record_name} 指向 {len(ip_list)} 个 IP。"
+            success_msg = f"✅ Cloudflare DNS 批量更新成功！已将 {record_name} 指向 {len(dns_ip_list)} 个 IP。"
             print(success_msg)
             print("   注意：DNS 解析将随机返回这些 IP 中的一个，实现负载均衡。")
-            # send_wxpusher_notification(content=success_msg, summary="DNS 更新成功")
             return
 
         except Exception as e:
@@ -505,7 +531,7 @@ def main():
     print(f"当前模式：{mode_str}，每个节点测试 {TCP_PROBES} 次 TCP 连接")
     print(f"最低成功率要求：{MIN_SUCCESS_RATE*100:.0f}%")
     print(f"IP 可用性二次筛选：{'启用' if TEST_AVAILABILITY else '禁用'}（仅对候选节点）")
-    print(f"IPv6 客户端 IP 过滤：{'启用' if FILTER_IPV6_AVAILABILITY else '禁用'}")
+    print(f"IPv6 客户端 IP 过滤（仅作用于DNS更新环节）：{'启用' if FILTER_IPV6_AVAILABILITY else '禁用'}")
     print(f"带宽测速候选数：{BANDWIDTH_CANDIDATES}，测速文件大小：{BANDWIDTH_SIZE_MB} MB，超时：{BANDWIDTH_TIMEOUT}s")
     if FILTER_COUNTRIES_ENABLED:
         print(f"国家过滤：启用，允许国家：{', '.join(ALLOWED_COUNTRIES)}")
@@ -579,7 +605,7 @@ def main():
         sys.exit(0)
 
     # 5. IP 可用性二次筛选（仅对候选节点）
-    candidates_after_availability = availability_filter_candidates(candidates)
+    candidates_after_availability, avail_ip_info = availability_filter_candidates(candidates)
 
     # 6. 带宽测速
     bw_results = bandwidth_filter(candidates_after_availability)
@@ -607,7 +633,7 @@ def main():
             f.write(node_str + "\n")
     print(f"\n结果已保存到 {OUTPUT_FILE}（共 {len(final_selected)} 个节点）")
 
-    # 9. 读取 ip.txt 中的纯 IP 列表，用于 DNS 更新
+    # 9. 读取 ip.txt 中的纯 IP 列表，用于 DNS 更新（作为降级备用）
     ip_list = []
     try:
         with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
@@ -616,7 +642,14 @@ def main():
         print(f"读取 {OUTPUT_FILE} 时发生错误: {e}")
 
     # 10. 批量更新 Cloudflare DNS（如果启用）
-    batch_update_cloudflare_dns(ip_list)
+    # 传递完整测速结果和落地信息，以便从候选池中优选 IPv4 节点
+    target_dns_count = GLOBAL_TOP_N if USE_GLOBAL_MODE else PER_COUNTRY_TOP_N
+    batch_update_cloudflare_dns(
+        ip_list,
+        ip_info=avail_ip_info,
+        full_bw_results=bw_results,
+        target_count=target_dns_count
+    )
 
     # 11. 同步到 GitHub（保留原有功能）
     sync_to_github()
