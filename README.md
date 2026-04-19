@@ -263,7 +263,7 @@ python3 main.py
 | `CF_API_TOKEN` | `string` | `""` | Cloudflare API 令牌（需具有 Zone:DNS:Edit 权限）。 |
 | `CF_ZONE_ID` | `string` | `""` | 域名区域 ID，在 Cloudflare 域名概览页右侧可找到。 |
 | `CF_DNS_RECORD_NAME` | `string` | `""` | 要更新的完整子域名，例如 `cf-proxy.yourdomain.com`。 |
-| `CF_TTL` | `int` | `120` | DNS 记录的 TTL（秒）。 |
+| `CF_TTL` | `int` | `60` | DNS 记录的 TTL（秒）。 |
 | `CF_PROXIED` | `boolean` | `false` | 是否启用 Cloudflare CDN 代理。通常设为 `false`（仅 DNS 解析）。 |
 
 ### 重试策略配置
