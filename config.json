@@ -13,7 +13,7 @@
     "TEST_AVAILABILITY": true,
     "_comment_TEST_AVAILABILITY": "是否对候选节点进行可用性二次筛选（API检测）",
 
-    "FILTER_IPV6_AVAILABILITY": true,
+    "FILTER_IPV6_AVAILABILITY": false,
     "_comment_FILTER_IPV6_AVAILABILITY": "是否在可用性检测时过滤返回IPv6客户端IP的节点（true=过滤掉，false=保留）",
 
     "BANDWIDTH_CANDIDATES": 80,
