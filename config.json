@@ -55,10 +55,10 @@
     "OUTPUT_FILE": "ip.txt",
     "_comment_OUTPUT_FILE": "最终结果保存的文件名",
 
-    "FILTER_COUNTRIES_ENABLED": true,
+    "FILTER_COUNTRIES_ENABLED": false,
     "_comment_FILTER_COUNTRIES_ENABLED": "是否启用国家过滤（仅保留指定国家的节点）",
 
-    "ALLOWED_COUNTRIES": ["HK"],
+    "ALLOWED_COUNTRIES": ["US", "HK"],
     "_comment_ALLOWED_COUNTRIES": "允许的国家代码列表（如 US, HK, JP），仅在 FILTER_COUNTRIES_ENABLED=true 时生效",
 
     "ENABLE_WXPUSHER": true,
@@ -71,5 +71,19 @@
     "_comment_WXPUSHER_UIDS": "【请填写接收通知的用户 UID 列表】",
 
     "WXPUSHER_API_URL": "http://wxpusher.zjiecode.com/api/send/message",
-    "_comment_WXPUSHER_API_URL": "WxPusher 消息发送 API 地址（一般无需修改）"
+    "_comment_WXPUSHER_API_URL": "WxPusher 消息发送 API 地址（一般无需修改）",
+
+    "_comment_cf_dns": "Cloudflare DNS 批量更新配置",
+    "CF_ENABLED": true,
+    "CF_API_TOKEN": "your_CF_API_TOKEN",
+    "CF_ZONE_ID": "your_CF_ZONE_ID",
+    "CF_DNS_RECORD_NAME": "your_CF_DNS_RECORD_NAME",
+    "CF_TTL": 120,
+    "CF_PROXIED": false,
+
+    "_comment_retry": "重试策略配置",
+    "DNS_UPDATE_MAX_RETRIES": 5,
+    "DNS_UPDATE_RETRY_DELAY": 10,
+    "GITHUB_SYNC_MAX_RETRIES": 5,
+    "GITHUB_SYNC_RETRY_DELAY": 10
 }

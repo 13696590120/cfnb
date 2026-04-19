@@ -3,8 +3,9 @@
 Cloudflare IP 优选工具 (TCP筛选 + IP可用性二次筛选 + curl带宽测速 + WxPusher通知)
 依赖：requests, curl (系统自带)
 配置文件：同目录下的 config.json（请根据需要修改参数）
-结果保存到 ip.txt，并自动推送到 GitHub
+结果保存到 ip.txt，并自动推送到 GitHub，同时批量更新到 Cloudflare DNS
 支持 Windows / Linux
+优化：国家过滤前置，减少无效 TCP 测试；重试参数可配置
 """
 
 import requests
@@ -63,7 +64,17 @@ def load_config():
         "ENABLE_WXPUSHER": True,
         "WXPUSHER_APP_TOKEN": "",
         "WXPUSHER_UIDS": [],
-        "WXPUSHER_API_URL": "http://wxpusher.zjiecode.com/api/send/message"
+        "WXPUSHER_API_URL": "http://wxpusher.zjiecode.com/api/send/message",
+        "CF_ENABLED": False,
+        "CF_API_TOKEN": "",
+        "CF_ZONE_ID": "",
+        "CF_DNS_RECORD_NAME": "",
+        "CF_TTL": 120,
+        "CF_PROXIED": False,
+        "DNS_UPDATE_MAX_RETRIES": 5,
+        "DNS_UPDATE_RETRY_DELAY": 10,
+        "GITHUB_SYNC_MAX_RETRIES": 5,
+        "GITHUB_SYNC_RETRY_DELAY": 10
     }
 
     # 用默认值补全缺失字段
@@ -327,18 +338,103 @@ def bandwidth_filter(candidates):
     results.sort(key=lambda x: x[1], reverse=True)
     return results
 
+def batch_update_cloudflare_dns(ip_list):
+    """
+    将 ip.txt 中的所有 IP 批量更新为 Cloudflare 的同名 A 记录。
+    支持自动重试（次数与间隔可在 config.json 中配置）。
+    """
+    if not cfg.get("CF_ENABLED", False):
+        print("Cloudflare DNS 批量更新未启用。")
+        return
+
+    if not ip_list:
+        msg = "ip.txt 中没有有效的 IP，DNS 更新跳过。"
+        print(msg)
+        send_wxpusher_notification(content=msg, summary="DNS 更新跳过")
+        return
+
+    # ========== 🔧 关键修复：对 IP 列表进行去重 ==========
+    ip_list = list(dict.fromkeys(ip_list))
+    # ===================================================
+
+    print(f"\n准备将以下 {len(ip_list)} 个 IP 批量更新到 Cloudflare DNS: {ip_list}")
+
+    headers = {
+        "Authorization": f"Bearer {cfg['CF_API_TOKEN']}",
+        "Content-Type": "application/json"
+    }
+    zone_id = cfg['CF_ZONE_ID']
+    record_name = cfg['CF_DNS_RECORD_NAME']
+    ttl = cfg.get('CF_TTL', 120)
+    proxied = cfg.get('CF_PROXIED', False)
+
+    max_retries = cfg.get('DNS_UPDATE_MAX_RETRIES', 5)
+    retry_delay = cfg.get('DNS_UPDATE_RETRY_DELAY', 10)
+
+    for attempt in range(1, max_retries + 1):
+        print(f"\n[DNS 更新] 尝试 {attempt}/{max_retries}...")
+        try:
+            # 查询现有记录
+            list_url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records?type=A&name={record_name}"
+            response = requests.get(list_url, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            if not result.get('success'):
+                error_detail = result.get('errors')
+                raise Exception(f"查询 DNS 记录失败: {error_detail}")
+
+            existing_records = result.get('result', [])
+
+            # 构建批量操作
+            deletes = [{"id": rec["id"]} for rec in existing_records]
+            posts = [
+                {
+                    "name": record_name,
+                    "type": "A",
+                    "content": ip,
+                    "ttl": ttl,
+                    "proxied": proxied
+                }
+                for ip in ip_list
+            ]
+
+            batch_url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/batch"
+            payload = {"deletes": deletes, "posts": posts}
+
+            response = requests.post(batch_url, headers=headers, json=payload)
+            response.raise_for_status()
+            result = response.json()
+            if not result.get('success'):
+                error_detail = result.get('errors')
+                raise Exception(f"批量更新失败: {error_detail}")
+
+            # 成功
+            success_msg = f"✅ Cloudflare DNS 批量更新成功！已将 {record_name} 指向 {len(ip_list)} 个 IP。"
+            print(success_msg)
+            print("   注意：DNS 解析将随机返回这些 IP 中的一个，实现负载均衡。")
+            # send_wxpusher_notification(content=success_msg, summary="DNS 更新成功")
+            return
+
+        except Exception as e:
+            error_msg = f"[尝试 {attempt}/{max_retries}] DNS 更新出错: {e}"
+            print(error_msg)
+            if attempt < max_retries:
+                print(f"等待 {retry_delay} 秒后重试...")
+                time.sleep(retry_delay)
+            else:
+                final_error = f"❌ Cloudflare DNS 更新失败，已重试 {max_retries} 次，错误：{e}"
+                print(final_error)
+                send_wxpusher_notification(content=final_error, summary="DNS 更新失败")
+
 def sync_to_github():
     """
-    根据操作系统调用相应的 Git 同步脚本，支持重试。
-    Windows: 调用 git_sync.ps1 (PowerShell)
-    Linux:   调用 git_sync.sh (bash)
+    根据操作系统调用相应的 Git 同步脚本，支持重试（重试参数从 config.json 读取）。
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     if sys.platform == "win32":
         script_name = "git_sync.ps1"
         interpreter = ["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"]
-        # Windows 下隐藏窗口的标志
         creationflags = subprocess.CREATE_NO_WINDOW
     else:
         script_name = "git_sync.sh"
@@ -357,8 +453,8 @@ def sync_to_github():
         except Exception:
             pass
 
-    max_retries = 5
-    retry_delay = 10
+    max_retries = cfg.get('GITHUB_SYNC_MAX_RETRIES', 5)
+    retry_delay = cfg.get('GITHUB_SYNC_RETRY_DELAY', 10)
 
     for attempt in range(1, max_retries + 1):
         print(f"\n正在同步到 GitHub (尝试 {attempt}/{max_retries})...")
@@ -413,6 +509,23 @@ def main():
         print("没有获取到任何有效节点，退出。")
         sys.exit(1)
 
+    # ========== 优化：在 TCP 测试前进行国家过滤，大幅减少测试量 ==========
+    if FILTER_COUNTRIES_ENABLED and ALLOWED_COUNTRIES:
+        before = len(nodes)
+        allowed_set = {c.upper() for c in ALLOWED_COUNTRIES}
+        filtered_nodes = []
+        for node in nodes:
+            # 解析国家代码，格式 "IP:PORT#COUNTRY"
+            parts = node.split('#')
+            if len(parts) == 2 and parts[1].upper() in allowed_set:
+                filtered_nodes.append(node)
+        nodes = filtered_nodes
+        after = len(nodes)
+        print(f"\n国家过滤（测试前）：{before} -> {after} 个节点（允许国家：{', '.join(allowed_set)}）")
+        if not nodes:
+            print("⚠️ 过滤后无任何节点，退出程序。")
+            sys.exit(0)
+
     total = len(nodes)
     print(f"开始 TCP 连接测试（超时 {TIMEOUT}s，并发 {MAX_WORKERS}）...")
 
@@ -435,18 +548,6 @@ def main():
 
     # 3. 排序：优先按成功率降序，相同成功率再按延迟升序
     results.sort(key=lambda x: (-x[3], x[1]))
-
-    # ===== 国家过滤 =====
-    if FILTER_COUNTRIES_ENABLED and ALLOWED_COUNTRIES:
-        before = len(results)
-        allowed_set = {c.upper() for c in ALLOWED_COUNTRIES}
-        results = [r for r in results if r[2].upper() in allowed_set]
-        after = len(results)
-        print(f"\n国家过滤：{before} -> {after} 个节点（允许国家：{', '.join(allowed_set)}）")
-        if not results:
-            print("⚠️ 过滤后无任何节点，退出程序。")
-            sys.exit(0)
-    # ===== 过滤结束 =====
 
     # 4. 选出候选节点
     if USE_GLOBAL_MODE:
@@ -479,7 +580,6 @@ def main():
 
     # 7. 确定最终节点
     if bw_results:
-        # 有测速结果，取速度最快的节点
         if USE_GLOBAL_MODE:
             final_selected = [node for node, _ in bw_results[:GLOBAL_TOP_N]]
         else:
@@ -489,7 +589,6 @@ def main():
         for i, (node, speed) in enumerate(bw_results[:len(final_selected)], 1):
             print(f"{i}. {node} 速度 {speed:.2f} Mbps")
     else:
-        # 测速失败或跳过，回退到 TCP 排序结果
         print("\n⚠️ 带宽测速无有效结果，将使用 TCP 筛选结果作为最终节点。")
         if USE_GLOBAL_MODE:
             final_selected = [node for node, _, _, _ in results[:GLOBAL_TOP_N]]
@@ -502,6 +601,19 @@ def main():
             f.write(node_str + "\n")
     print(f"\n结果已保存到 {OUTPUT_FILE}（共 {len(final_selected)} 个节点）")
 
+    # 9. 读取 ip.txt 中的纯 IP 列表，用于 DNS 更新
+    ip_list = []
+    try:
+        with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
+            ip_list = [line.split(':')[0].strip() for line in f if line.strip()]
+    except Exception as e:
+        print(f"读取 {OUTPUT_FILE} 时发生错误: {e}")
+
+    # 10. 批量更新 Cloudflare DNS（如果启用）
+    batch_update_cloudflare_dns(ip_list)
+
+    # 11. 同步到 GitHub（保留原有功能）
+    sync_to_github()
+
 if __name__ == "__main__":
     main()
-    sync_to_github()
