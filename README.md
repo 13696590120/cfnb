@@ -285,7 +285,7 @@ python3 main.py
 
 ## ☁️ Cloudflare DNS 批量更新说明
 
-本工具支持将优选出的 IP 地址列表，以**多 IP 轮询（Round-Robin）** 的方式自动更新到 Cloudflare DNS。每次运行时，脚本会：
+本工具支持将优选出的 IP 地址列表，以 **多 IP 轮询（Round-Robin）** 的方式自动更新到 Cloudflare DNS。每次运行时，脚本会：
 
 1. 查询目标子域名（例如 `cf-proxy.yourdomain.com`）下现有的所有 A 记录。
 2. 利用 Cloudflare 批量 API，**先删除所有旧记录，再为新的 IP 列表创建同名 A 记录**。
