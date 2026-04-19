@@ -46,7 +46,7 @@ def load_config():
         "MIN_SUCCESS_RATE": 1.0,
         "TEST_AVAILABILITY": True,
         "FILTER_IPV6_AVAILABILITY": True,
-        "BANDWIDTH_CANDIDATES": 80,
+        "BANDWIDTH_CANDIDATES": 32,
         "GLOBAL_TOP_N": 16,
         "PER_COUNTRY_TOP_N": 1,
         "MAX_WORKERS": 150,
