@@ -23,10 +23,10 @@
 | :--- | :--- |
 | 🌐 **多模式筛选** | 支持 **全局最优 TopN** 与 **分国家最优 TopN** 两种筛选模式，灵活适配不同使用场景。 |
 | ⚡ **TCP 连接测试** | 多线程并发测试 TCP 握手延迟，可自定义测试次数与成功率阈值，淘汰不稳定节点。 |
-| 🔍 **IP 可用性二次检测** | 调用专用 API 验证节点是否可正常代理请求，过滤“假通”节点。检测 API 失效时自动降级，不影响流程。 |
+| 🔍 **IP 可用性二次检测** | 调用专用 API 验证节点是否可正常代理请求，过滤“假通”节点。检测 API 失效时自动降级，不影响流程。**同时记录每个节点的落地 IP 类型（IPv4 / IPv6）**，供后续 DNS 更新环节使用。 |
 | 📶 **真实带宽测速** | 基于 `curl` 下载 Cloudflare 测速文件，实测节点吞吐量（Mbps），确保最终节点拥有最优带宽表现。 |
 | 🌍 **国家过滤前置** | 支持仅保留指定国家/地区的节点（如 HK、US、JP），**在 TCP 测试前即完成过滤**，大幅减少无效测试量。 |
-| ☁️ **Cloudflare DNS 自动更新** | 将优选出的 IP 列表批量更新至 Cloudflare DNS 的同名 A 记录，实现解析层面的自动负载均衡。 |
+| ☁️ **Cloudflare DNS 自动更新** | 将优选出的 IP 列表批量更新至 Cloudflare DNS 的同名 A 记录，实现解析层面的自动负载均衡。**新版支持仅更新落地 IPv4 节点，且可从全部测速候选池中按速度递补，保证 DNS 记录数量最大化。** |
 | 📬 **微信实时通知** | 集成 **WxPusher**，任务启动、异常告警、结果摘要均可推送至微信，随时掌握运行状态。 |
 | 🔄 **定时自动运行** | 通过 Windows 计划任务或 Linux cron 实现无人值守定时执行，持续保持节点列表新鲜度。 |
 | 🚀 **一键部署** | 提供 `setup.ps1` (Windows) 与 `setup.sh` (Linux) 自动化部署脚本，自动安装依赖、配置定时任务并生成 `.gitignore`。 |
@@ -213,7 +213,7 @@ python3 main.py
 | 参数 | 类型 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
 | `TEST_AVAILABILITY` | `boolean` | `true` | 是否对候选节点进行 **可用性二次筛选**（调用专用 API 检测节点能否正常代理请求）。推荐保持开启。 |
-| `FILTER_IPV6_AVAILABILITY` | `boolean` | `false` | 是否在可用性检测时**过滤掉返回 IPv6 落地 IP 的节点**。若您的需要开启请增加候选池大小，以免过滤节点过少，建议关闭（`false`=保留）。 |
+| `FILTER_IPV6_AVAILABILITY` | `boolean` | `false` | **（新版语义）** 是否在 **Cloudflare DNS 更新时** 过滤掉落地 IP 为 IPv6 的节点。设为 `true` 后，DNS 记录只会包含落地 IPv4 的节点，**但不会影响 `ip.txt` 的输出和带宽测速候选池**。 |
 | `AVAILABILITY_CHECK_API` | `string` | `"https://check-proxyip-api.cmliussss.net/check"` | 可用性检测 API 地址。一般无需修改，除非服务地址变更。 |
 | `AVAILABILITY_TIMEOUT` | `float` | `8.0` | 单次 API 请求的超时时间（秒）。 |
 
@@ -289,8 +289,9 @@ python3 main.py
 本工具支持将优选出的 IP 地址列表，以 **多 IP 轮询（Round-Robin）** 的方式自动更新到 Cloudflare DNS。每次运行时，脚本会：
 
 1. 查询目标子域名（例如 `cf-proxy.yourdomain.com`）下现有的所有 A 记录。
-2. 利用 Cloudflare 批量 API，**先删除所有旧记录，再为新的 IP 列表创建同名 A 记录**。
-3. 整个过程在一个原子操作中完成，确保最终 DNS 记录与 `ip.txt` 中的 IP 完全一致。
+2. **（新版优化）** 若启用了 `FILTER_IPV6_AVAILABILITY`，程序将从 **全部参与带宽测速的候选节点** 中，按测速结果从快到慢依次挑选落地 IPv4 的节点，最多选取 `GLOBAL_TOP_N`（或 `PER_COUNTRY_TOP_N`）个。这样可以充分利用候选池，避免因 `ip.txt` 中混有 IPv6 落地节点而导致 DNS 记录数量不足。
+3. 利用 Cloudflare 批量 API，**先删除所有旧记录，再为筛选出的节点创建同名 A 记录**。
+4. 整个过程在一个原子操作中完成，确保最终 DNS 记录与优选策略一致。
 
 **使用前提**：
 - 拥有 Cloudflare 账号，并将域名托管在 Cloudflare。
@@ -299,7 +300,7 @@ python3 main.py
 
 **注意事项**：
 - 免费套餐单次批量操作最多支持 200 条记录，通常足够使用。
-- 若 `ip.txt` 为空，脚本会跳过 DNS 更新并发送微信通知，**不会清空现有记录**。
+- 若候选池中落地 IPv4 节点总数不足目标数量，则更新实际可用的数量，不会强制凑满。
 - 全量替换策略在极短时间窗口内可能导致解析短暂为空，但对绝大多数应用场景无影响。
 - 如需完全避免服务中断，可自行修改代码为增量更新（只增删差异部分）。
 
@@ -386,6 +387,9 @@ python3 main.py
 7. **隐私保护**  
    自动生成的 `.gitignore` 文件会忽略 `config.json`、`git_sync.ps1` 和 `git_sync.sh`，防止敏感信息被提交到公开仓库。
 
+8. **为什么我的 DNS 记录数量少于 `GLOBAL_TOP_N`？**  
+   如果您启用了 `FILTER_IPV6_AVAILABILITY`，且候选池中落地 IPv4 的节点总数不足目标数量，则 DNS 只会更新实际可用的节点数。这是正常现象，您可以通过增加 `BANDWIDTH_CANDIDATES` 来扩大候选池。
+
 ---
 
 ## 🙏 致谢
@@ -398,3 +402,4 @@ python3 main.py
 **许可证**：本项目采用 [MIT License](https://opensource.org/licenses/MIT) 开源。
 
 ---
+以上是完整的 `README.md` 内容，已同步更新所有关于 `FILTER_IPV6_AVAILABILITY` 和 DNS 更新机制的描述。可直接替换原文件。
