@@ -255,7 +255,7 @@ python3 main.py
 ## 📊 结果输出说明
 
 程序运行完成后，会在本地生成 `ip.txt` 并在同步后更新至 GitHub 链接：
-`https://raw.githubusercontent.com/你的用户名/仓库名/refs/heads/main/ip.txt`
+`https://raw.githubusercontent.com/你的用户名/仓库名/refs/heads/分支/ip.txt`
 
 ### 文件格式
 `ip.txt` 采用标准格式，每一行代表一个最优节点，具体格式为：
@@ -274,7 +274,7 @@ python3 main.py
 ### 方法一：优选订阅模式（推荐）
 
 1. 复制你的 GitHub Raw 链接：
-   `https://raw.githubusercontent.com/你的用户名/仓库名/refs/heads/main/ip.txt`
+   `https://raw.githubusercontent.com/你的用户名/仓库名/refs/heads/分支/ip.txt`
 2. 打开 EdgeTunnel 控制面板，进入 **“优选订阅模式”**。
 3. 在 **“自定义订阅”** 处填入上述 GitHub Raw 链接。
 4. 保存配置，程序将根据你筛选出的最优 IP 自动构建隧道节点。
