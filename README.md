@@ -54,9 +54,9 @@ cd 仓库名
     pip install requests
     ```
 
-### 3\. 修改配置文件 `config.json`
+### 3\. 修改配置文件
 
-使用文本编辑器（如 Notepad++）修改关键字段，配置文件支持以下所有参数：
+使用文本编辑器（如 Notepad++）修改`config.json`关键字段，配置文件支持以下所有参数：
 
 | 参数名称 | 说明 | 默认值 |
 | :--- | :--- | :--- |
@@ -80,7 +80,7 @@ cd 仓库名
 
 ### 4\. 配置 GitHub 自动推送
 
-若需自动更新仓库中的 `ip.txt`，请编辑 `git_sync.ps1`：
+使用文本编辑器（如 Notepad++）修改`git_sync.ps1`关键字段，配置文件支持以下所有参数：
 
 ```powershell
 $github_token = "ghp_xxxxxxxxxxxxxxxxxxxx"   # GitHub Personal Access Token
@@ -95,7 +95,7 @@ $repo_name = "仓库名"
 python main.py
 ```
 
-程序将自动执行：**抓取节点 → TCP 测试 → 可用性二次检测 → 带宽测速 → GitHub 推送 → 微信通知**。
+程序将自动执行：**抓取节点 → TCP 测试 → 可用性二次检测 → 带宽测速 → GitHub 推送**。
 
 -----
 
