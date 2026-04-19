@@ -45,7 +45,7 @@ def load_config():
         "TCP_PROBES": 7,
         "MIN_SUCCESS_RATE": 1.0,
         "TEST_AVAILABILITY": True,
-        "BANDWIDTH_CANDIDATES": 32,
+        "BANDWIDTH_CANDIDATES": 80,
         "GLOBAL_TOP_N": 16,
         "PER_COUNTRY_TOP_N": 1,
         "MAX_WORKERS": 150,
