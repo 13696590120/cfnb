@@ -60,21 +60,6 @@ cd 仓库名
 
 | 参数名称 | 说明 | 默认值 |
 | :--- | :--- | :--- |
-| `USE_GLOBAL_MODE` | `true`: 全局最优 N 个；`false`: 每个国家最优 N 个 | `true` |
-| `TCP_PROBES` | 每个节点测试 TCP 连接的次数 | `7` |
-| `MIN_SUCCESS_RATE` | TCP 最低成功率阈值（如 1.0 代表 100% 成功） | `1.0` |
-| `TEST_AVAILABILITY` | 是否进行 API 可用性二次筛选 | `true` |
-| `BANDWIDTH_CANDIDATES`| 进入带宽测速的候选节点数（从 TCP 通过者中选取） | `32` |
-| `GLOBAL_TOP_N` | 全局模式下最终保留的节点数量 | `16` |
-| `PER_COUNTRY_TOP_N` | 分国家模式下每个国家保留的节点数量 | `1` |
-| `MAX_WORKERS` | TCP 并发测试的最大线程数 | `150` |
-| `AVAILABILITY_WORKERS`| 可用性检测的并发线程数 | `50` |
-| `BANDWIDTH_WORKERS` | 带宽测速的并发线程数 | `6` |
-| `TIMEOUT` | 单次 TCP 连接超时时间（秒） | `2.5` |
-| `AVAILABILITY_TIMEOUT`| 可用性 API 请求超时时间（秒） | `8` |
-| `BANDWIDTH_TIMEOUT` | 单个节点带宽测速超时时间（秒） | `5` |
-| `BANDWIDTH_SIZE_MB` | 带宽测速下载文件大小 (MB) | `1` |
-| `JSON_URL` | Cloudflare IP 节点数据源地址 | `https://zip.cm.edu.kg/all.txt` |
 | `WXPUSHER_APP_TOKEN` | WxPusher 的应用 Token（用于通知） | `AT_xxx...` |
 | `WXPUSHER_UIDS` | 接收通知的微信 UID 列表 | `["UID_xxx"]` |
 
