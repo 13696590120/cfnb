@@ -13,7 +13,7 @@
     "TEST_AVAILABILITY": true,
     "_comment_TEST_AVAILABILITY": "是否对候选节点进行可用性二次筛选（API检测）",
 
-    "FILTER_IPV6_AVAILABILITY": false,
+    "FILTER_IPV6_AVAILABILITY": true,
     "_comment_FILTER_IPV6_AVAILABILITY": "【修改后语义】是否在 DNS 更新时过滤掉落地为 IPv6 的节点（true=过滤，false=保留）。注意：此开关不再影响 ip.txt 和带宽测速。",
 
     "BANDWIDTH_CANDIDATES": 32,
