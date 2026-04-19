@@ -56,7 +56,7 @@ cd 仓库名
 
 ### 3\. 修改配置文件
 
-使用文本编辑器（如 Notepad++）修改`config.json`关键字段，配置文件支持以下所有参数：
+使用文本编辑器（如 Notepad++）修改`config.json`关键字段：
 
 | 参数名称 | 说明 | 默认值 |
 | :--- | :--- | :--- |
@@ -65,7 +65,7 @@ cd 仓库名
 
 ### 4\. 配置 GitHub 自动推送
 
-使用文本编辑器（如 Notepad++）修改`git_sync.ps1`关键字段，配置文件支持以下所有参数：
+使用文本编辑器（如 Notepad++）修改`git_sync.ps1`关键字段：
 
 ```powershell
 $github_token = "ghp_xxxxxxxxxxxxxxxxxxxx"   # GitHub Personal Access Token
