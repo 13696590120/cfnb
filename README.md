@@ -62,8 +62,8 @@ cd 仓库名
 | :--- | :--- | :--- |
 | `USE_GLOBAL_MODE` | `true`: 全局最优 N 个；`false`: 每个国家最优 N 个 | `true` |
 | `TCP_PROBES` | 每个节点测试 TCP 连接的次数 | `7` |
-| `MIN_SUCCESS_RATE` | **(新)** TCP 最低成功率阈值（如 1.0 代表 100% 成功） | `1.0` |
-| `TEST_AVAILABILITY` | **(新)** 是否进行 API 可用性二次筛选 | `true` |
+| `MIN_SUCCESS_RATE` | TCP 最低成功率阈值（如 1.0 代表 100% 成功） | `1.0` |
+| `TEST_AVAILABILITY` | 是否进行 API 可用性二次筛选 | `true` |
 | `BANDWIDTH_CANDIDATES`| 进入带宽测速的候选节点数（从 TCP 通过者中选取） | `32` |
 | `GLOBAL_TOP_N` | 全局模式下最终保留的节点数量 | `16` |
 | `PER_COUNTRY_TOP_N` | 分国家模式下每个国家保留的节点数量 | `1` |
