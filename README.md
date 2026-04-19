@@ -213,7 +213,7 @@ python3 main.py
 | 参数 | 类型 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
 | `TEST_AVAILABILITY` | `boolean` | `true` | 是否对候选节点进行 **可用性二次筛选**（调用专用 API 检测节点能否正常代理请求）。推荐保持开启。 |
-| `FILTER_IPV6_AVAILABILITY` | `boolean` | `true` | 是否在可用性检测时**过滤掉返回 IPv6 落地 IP 的节点**。若您的需要开启请增加候选池大小，以免过滤节点过少，建议关闭（`false`=保留）。 |
+| `FILTER_IPV6_AVAILABILITY` | `boolean` | `false` | 是否在可用性检测时**过滤掉返回 IPv6 落地 IP 的节点**。若您的需要开启请增加候选池大小，以免过滤节点过少，建议关闭（`false`=保留）。 |
 | `AVAILABILITY_CHECK_API` | `string` | `"https://check-proxyip-api.cmliussss.net/check"` | 可用性检测 API 地址。一般无需修改，除非服务地址变更。 |
 | `AVAILABILITY_TIMEOUT` | `float` | `8.0` | 单次 API 请求的超时时间（秒）。 |
 
