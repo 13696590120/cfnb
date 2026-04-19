@@ -87,11 +87,6 @@ $github_token = "ghp_xxxxxxxxxxxxxxxxxxxx"   # GitHub Personal Access Token
 $github_username = "你的GitHub用户名"
 $repo_name = "仓库名"
 ```
-
-> [\!WARNING]
-> **安全提醒**：切勿将包含真实 Token 的脚本提交到公开仓库！建议将其加入 `.gitignore`。
-> 同时确保项目目录已与远程仓库关联：`git remote add origin https://github.com/用户/仓库.git`
-
 ### 5\. 运行程序
 
 在项目文件夹地址栏输入 `cmd` 并回车，执行：
